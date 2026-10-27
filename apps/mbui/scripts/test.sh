@@ -34,7 +34,7 @@ for t in ${TARGETS:-native}; do
     # (the screens' tests in sfapp's own, screens_wbtest.mbt: a package of their own was a second program of the whole
     # app, compiled again on every change, 88 s of a branch's app part with sfapp's own 92, 2026-10-23)
     # (sfpages' own tests too: the pages moved there from sfapp brought theirs, run by nothing until 2026-10-25)
-    pkgs="-p stillfail/sf -p stillfail/sfpages -p stillfail/sfapp -p stillfail/sfapp/settings -p stillfail/gallery -p stillfail/player"
+    pkgs="-p stillfail/sf -p stillfail/sfpages -p stillfail/sfapp -p stillfail/sfapp/settings -p stillfail/gallery -p stillfail/player -p stillfail/pinyin -p stillfail/keyboard"
     # (APP_GROUP=k/n: one runner's share of the app part's runs, app_group_of below; the small packages' run is the first
     # group's, so the others build sfapp's program alone)
     [ -n "${APP_GROUP:-}" ] && [ "${APP_GROUP%/*}" != 1 ] && pkgs="-p stillfail/sfapp"

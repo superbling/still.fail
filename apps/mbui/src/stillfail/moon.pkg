@@ -9,6 +9,7 @@ import {
   "stillfail/sfbase",
   "stillfail/sfapp",
   "stillfail/sf",
+  "stillfail/keyboard",
 }
 
 options(
