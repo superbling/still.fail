@@ -1,14 +1,18 @@
 // An agent's request about a vault item, in its chat (docs/vault.md): to use one (申请和授权) or to keep one (agent 存入),
 // drawn from its card (`card.vaultAsk`, station/src/vault/secrets.ts) in place of the post's words. A card of words
 // (docs/ui-panels.md 页面卡片): what is asked, in its title; what will run; a risk, only where there is one; the answer's
-// buttons at its foot (VaultApproval.tsx). Once decided, one line saying how it ended.
+// buttons at its foot (VaultApproval.tsx). Once decided, one line saying how it ended; decided on screen, the card
+// first stays as it was, the answer given as it was and the rest greyed, none pressed, till it is out of sight
+// (settling.tsx, docs/list-motion.md).
 import type { ChatMessage, VaultAsk as Ask, VaultSave } from "./core/shapes.ts";
 import { VaultCard } from "./VaultApproval.tsx";
+import { Button } from "./ui.tsx";
+import { useSettling } from "./settling.tsx";
 import { useStation } from "./station.tsx";
 import * as pagesCss from "./styles/pages.css.ts";
 import * as css from "./VaultAsk.css.ts";
 import { t } from "./i18n.ts";
-import type { ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 
 /** What a request's card says: the item, how it would be given, the command it is for (or, one to keep, what it is). */
 export type Asked = { name: string; mode: string; command?: string | null | undefined; save?: VaultSave | undefined; station?: string | undefined };
@@ -52,7 +56,17 @@ function Outcome({ ask }: { ask: Ask }) {
 /** The request `ask` the post `m` makes. `rows`: the answer's buttons in it (the decisions page has them at its foot). */
 export function VaultAsk({ message: m, ask, rows = true }: { message: ChatMessage; ask: Ask; rows?: boolean }) {
   const station = useStation().address;
-  if (ask.status) return <Outcome ask={ask} />;
-  const waiting = rows && !!m.card?.vault && !m.decision?.resolved;
-  return <AskCard ask={ask}>{waiting && <VaultCard address={station} id={m.card!.vault!} who={m.card?.assigneeText} />}</AskCard>;
+  const box = useRef<HTMLDivElement>(null);
+  const open = !ask.status;
+  const [drawnOpen, setDrawnOpen] = useState(open);
+  useSettling(box, open, drawnOpen, setDrawnOpen);
+  if (!open && !drawnOpen) return <Outcome ask={ask} />;
+  const buttons = rows && !!m.card?.vault;
+  // (decided where its buttons were shown: they stay, the one given as it was, the rest greyed, none pressed)
+  const foot = !buttons ? null : open ? !m.decision?.resolved && <VaultCard address={station} id={m.card!.vault!} who={m.card?.assigneeText} />
+    : <div className={pagesCss.cardFoot} inert>
+      <Button variant="primary" disabled={ask.status !== "granted"}>{t(ask.save ? "web-pages.vault.act.save" : "web-pages.vault.act.allow")}</Button>
+      <Button variant="ghost" disabled={ask.status !== "denied"}>{t(ask.save ? "web-pages.vault.act.dontSave" : "web-pages.vault.act.deny")}</Button>
+    </div>;
+  return <div ref={box}><AskCard ask={ask}>{foot}</AskCard></div>;
 }

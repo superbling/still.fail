@@ -39,8 +39,8 @@ fn chat_state(c : @ui.Ctx, src : Source, here : MessageHere, words : String, lea
   let turn = lead == "need"
   let said = (if turn { look.state_turn } else { look.state_quiet }).then(chat_state_wraps)
   // what it needs of the viewer and can be let go: one card, the bell and its words, 忽略 at its end; let go (the core
-  // says so at once), the card goes as a post's answered options do (fading to 90%, its room closing on the rows'
-  // spring) and the line saying it was let go fades in after it in its place (vault_ask_card's)
+  // says so at once), on screen the card stays, saying so, 忽略 no longer pressed, and out of sight it is the line
+  // saying it was let go, as a post's answered options are (Turns::in_turn)
   let asking = match here.view.state_ask {
     Some(seq) if turn => Some(seq)
     _ => None
@@ -48,9 +48,8 @@ fn chat_state(c : @ui.Ctx, src : Source, here : MessageHere, words : String, lea
   match (here.list, here.view.thread) {
     (Some(l), Some(thread)) if asking is Some(_) || lead == "dismissed" => {
       let key = here.station + "/" + thread.to_int().to_string()
-      let open = l.turns.in_turn(c, "need/" + key, asking is Some(_), close_turn_ms)
-      let at = l.turns.started_at("need/" + key)
-      let start_at = if at >= 0.0 { Some(at) } else { None }
+      let open = l.turns.in_turn(c, "need/" + key, asking is Some(_), close_turn_ms, seen=seen_in(c, here, None))
+      let start_at = l.turns.start("need/" + key)
       under_post(
         c,
         "need-card/" + key,
@@ -96,7 +95,7 @@ fn chat_state(c : @ui.Ctx, src : Source, here : MessageHere, words : String, lea
     _ => c.text(words, style=said) |> ignore
   }
   match here.view.state_ask {
-    Some(seq) => c.box(style=decision_box, fn() { ask_dismiss(c, src, here, seq, true, false) }) |> ignore
+    Some(seq) => c.box(style=decision_box, fn() { ask_dismiss(c, src, here, seq, true, false, state=true) }) |> ignore
     None => ()
   }
 }

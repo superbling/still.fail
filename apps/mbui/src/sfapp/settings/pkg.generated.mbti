@@ -33,7 +33,7 @@ pub fn ask(String, String, String, String, (String) -> Unit, hint? : String, sec
 
 pub fn ask_action(String) -> Unit
 
-pub fn ask_buttons(@ui.Ctx, () -> Unit) -> Unit
+pub fn ask_buttons(@ui.Ctx, still? : Bool, () -> Unit) -> Unit
 
 pub fn ask_words(@ui.Ctx, String, String) -> Unit
 
@@ -212,7 +212,7 @@ pub fn panels_frame(Core) -> Unit
 
 pub fn pending_login(Core, String, String) -> Json?
 
-pub fn phone_card(@ui.Ctx, Core?, String, String, String, Bool, lasts? : String, who? : String?) -> Unit
+pub fn phone_card(@ui.Ctx, Core?, String, String, String, Bool, lasts? : String, who? : String?, settled? : String) -> Unit
 
 pub fn phone_outcome(@ui.Ctx, String, String, String) -> Unit
 
@@ -294,9 +294,9 @@ pub fn vault_ask(@ui.Ctx, Core, String, String, Asked, Bool, who? : String?, ext
 
 pub fn vault_ask_words(@ui.Ctx, Asked) -> Unit
 
-pub fn vault_card(@ui.Ctx, Core, String, String, Asked, Answer) -> Unit
+pub fn vault_card(@ui.Ctx, Core, String, String, Asked, Answer, settled? : String) -> Unit
 
-pub fn vault_foot(@ui.Ctx, Core, String, String, Answer, Bool, typed? : Typed?, extra? : (() -> Unit)?, foot? : Bool) -> Unit
+pub fn vault_foot(@ui.Ctx, Core, String, String, Answer, Bool, typed? : Typed?, extra? : (() -> Unit)?, foot? : Bool, settled? : String) -> Unit
 
 pub fn vault_hosts(Map[String, String]) -> Array[String]
 
@@ -304,7 +304,7 @@ pub let vault_kinds : Array[String]
 
 pub let vault_lasts : Array[String]
 
-pub fn vault_outcome(@ui.Ctx, Asked, String, String) -> Unit
+pub fn vault_outcome(@ui.Ctx, Asked, String, String, inline? : Bool) -> Unit
 
 pub fn vault_problem(String, Map[String, String], Bool, String) -> String
 

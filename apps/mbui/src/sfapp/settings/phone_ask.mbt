@@ -1,7 +1,8 @@
 // An agent's request to debug its person's phone as a card (docs/adb-share.md, 2026-10-29: as a vault request's): what
 // is asked in its title, the agent's reason under it, and at its foot 允许 as the one solid button, 拒绝 beside it, and
 // how long it is allowed a choice beside them that starts at the longest (`adb.decide` on the chat's station). Only the
-// viewer's own request is answered; elsewhere a line says whose it is. Decided, a line says how it went. What it
+// viewer's own request is answered; elsewhere a line says whose it is. Decided, a line says how it went (where it was
+// answered on screen, the card first stays, `settled`: the answer given as it was, the rest greyed, none pressed). What it
 // keeps between frames (its menu, the length picked, the answer under way) is the vault card's, keyed `phone/<id>`.
 
 ///|
@@ -15,12 +16,13 @@ pub fn phone_card(
   mine : Bool,
   lasts? : String = "chat",
   who? : String? = None,
+  settled? : String = "",
 ) -> Unit {
   // (a card of words, as a vault request's: its answer in its foot corners)
   @sf.card(c, fn() {
     ask_words(c, tr("android-misc.adb.ask.chat.title"), reason)
     match core {
-      Some(core) if mine => phone_foot(c, core, station, request, lasts)
+      Some(core) if mine => phone_foot(c, core, station, request, lasts, settled)
       _ =>
         match who {
           Some(w) if w != "" => c.text(w, style=ask_note) |> ignore
@@ -33,7 +35,8 @@ pub fn phone_card(
 
 ///|
 /// Its answer: 允许 (for the length chosen), 拒绝, and the length's menu.
-fn phone_foot(c : @ui.Ctx, core : Core, station : String, request : String, lasts : String) -> Unit {
+fn phone_foot(c : @ui.Ctx, core : Core, station : String, request : String, lasts : String, settled : String) -> Unit {
+  let done = settled != ""
   // (up to its owner's 默认最长授权, starting at the longest)
   let scopes = if lasts == "hour" { ["hour"] } else { ["hour", "chat"] }
   let scope = match vault_picked.get("phone/" + request) {
@@ -43,6 +46,15 @@ fn phone_foot(c : @ui.Ctx, core : Core, station : String, request : String, last
   let on = [("station", station), ("request", request)]
   let pending = vault_pending.get("phone/" + request)
   let under = pending is Some(_) || is_doing(core, ["adb.decide"], on)
+  // (settled: the answer given as it was, the rest greyed; not turning)
+  let greyed = fn(yes : Bool) {
+    if done {
+      settled != (if yes { "granted" } else { "denied" })
+    } else {
+      under
+    }
+  }
+  let busy = fn(yes : Bool) { !done && pending == Some(yes) }
   let decide = fn(yes : Bool) {
     if core.read_only != "" {
       (core.say)(core.read_only)
@@ -64,11 +76,11 @@ fn phone_foot(c : @ui.Ctx, core : Core, station : String, request : String, last
       }
     })
   }
-  ask_buttons(c, fn() {
-    if @sf.button(c, tr("android-settings.vault.act.allow"), key="phone/" + request + "/yes", tone=Primary, busy=pending == Some(true), disabled=under) {
+  ask_buttons(c, still=done, fn() {
+    if @sf.button(c, tr("android-settings.vault.act.allow"), key="phone/" + request + "/yes", tone=Primary, busy=busy(true), disabled=greyed(true)) && !done {
       decide(true)
     }
-    if @sf.button(c, tr("android-settings.vault.act.deny"), key="phone/" + request + "/no", tone=Ghost, busy=pending == Some(false), disabled=under) {
+    if @sf.button(c, tr("android-settings.vault.act.deny"), key="phone/" + request + "/no", tone=Ghost, busy=busy(false), disabled=greyed(false)) && !done {
       decide(false)
     }
     if scopes.length() < 2 {

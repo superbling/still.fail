@@ -192,10 +192,18 @@ pub fn vault_ask(
 ///|
 /// Request `request` in workspace `ws` as its card where it is asked (a chat's, the 奏 page's): what is asked, and its
 /// answer at the foot as the card says it (`answer`: card_answer), whole with its message.
-pub fn vault_card(c : @ui.Ctx, core : Core, ws : String, request : String, ask : Asked, answer : Answer) -> Unit {
+pub fn vault_card(
+  c : @ui.Ctx,
+  core : Core,
+  ws : String,
+  request : String,
+  ask : Asked,
+  answer : Answer,
+  settled? : String = "",
+) -> Unit {
   @sf.card(c, fn() {
     vault_asked(c, ask)
-    vault_foot(c, core, ws, request, answer, ask.save_kind != "", typed=ask.typed_in(), foot=answer is (Approve(_) | SetUp))
+    vault_foot(c, core, ws, request, answer, ask.save_kind != "", typed=ask.typed_in(), foot=answer is (Approve(_) | SetUp), settled~)
   })
   |> ignore
 }
@@ -265,9 +273,12 @@ pub fn ask_words(c : @ui.Ctx, title : String, note : String) -> Unit {
 
 ///|
 /// Its answer's buttons, as vault_foot lays them last on its card: a line of them, on to a second what has not the room
-/// on the first, out in the card's foot corners.
-pub fn ask_buttons(c : @ui.Ctx, body : () -> Unit) -> Unit {
-  c.box(style=ask_foot.then(@sf.foot_reach(@sf.button_height())), flow=true, line_gap=ask_foot_lines, body) |> ignore
+/// on the first, out in the card's foot corners; `still`: answered, only drawn (none pressed any more).
+pub fn ask_buttons(c : @ui.Ctx, still? : Bool = false, body : () -> Unit) -> Unit {
+  let foot = c.box(style=ask_foot.then(@sf.foot_reach(@sf.button_height())), flow=true, line_gap=ask_foot_lines, body)
+  if still {
+    c.draw_only(foot)
+  }
 }
 
 ///|
@@ -320,7 +331,9 @@ pub fn vault_actions(c : @ui.Ctx, core : Core, ws : String, request : String, mi
 /// the person's to type in, its field over them): the buttons (`foot`: last on its card, in the card's foot corners:
 /// @sf.foot_reach), or a line where there is none to give here.
 /// `extra`: after the buttons (the vault page's 打开对话). Tapped, the button turns till what it did shows: its card saying how it went
-/// (the core says so at once), or the request gone from the vault page.
+/// (the core says so at once), or the request gone from the vault page. `settled`: how it went (granted, denied, else
+/// ended), the card staying where it was answered: none of it pressed any more, the answer given as it was, the rest
+/// greyed (Turns::in_turn).
 pub fn vault_foot(
   c : @ui.Ctx,
   core : Core,
@@ -331,8 +344,10 @@ pub fn vault_foot(
   typed? : Typed? = None,
   extra? : (() -> Unit)? = None,
   foot? : Bool = false,
+  settled? : String = "",
 ) -> Unit {
   let note = fn(words : String) { c.text(words, style=ask_note) |> ignore }
+  let done = settled != ""
   let lasts = match answer {
     Elsewhere => {
       note(tr("android-settings.vault.approve.inApp"))
@@ -357,9 +372,17 @@ pub fn vault_foot(
   }
   let on = [("workspace", ws), ("request", request)]
   let busy = fn(yes : Bool) {
-    pending == Some(yes) || is_doing(core, [if yes { "vault.approve" } else { "vault.deny" }], on)
+    !done && (pending == Some(yes) || is_doing(core, [if yes { "vault.approve" } else { "vault.deny" }], on))
   }
-  let under = pending is Some(_) || is_doing(core, ["vault.approve", "vault.deny"], on)
+  // (settled: the answer given as it was, the rest greyed)
+  let greyed = fn(yes : Bool, otherwise : Bool) {
+    if done {
+      settled != (if yes { "granted" } else { "denied" })
+    } else {
+      otherwise
+    }
+  }
+  let under = done || pending is Some(_) || is_doing(core, ["vault.approve", "vault.deny"], on)
   let act = fn(yes : Bool, call : String, what : String, params : Json) {
     if core.read_only != "" {
       (core.say)(core.read_only)
@@ -392,8 +415,8 @@ pub fn vault_foot(
   let mut username = ""
   let mut entered = false
   match (answer, typed) {
-    (Approve(_), Some(ty)) =>
-      c.box(style=if foot { ask_typed.then(@sf.over_foot_reach(@sf.button_height())) } else { ask_typed }, fn() {
+    (Approve(_), Some(ty)) => {
+      let typed_box = c.box(style=if foot { ask_typed.then(@sf.over_foot_reach(@sf.button_height())) } else { ask_typed }, fn() {
         if ty.kind == "login" && ty.username == "" {
           let words = tr("android-settings.vault.ask.typed.username")
           username = @sf.input(c, "vault/" + request + "/username", placeholder=words, disabled=under, solid=true, field=typed_field(request, "/username")).text
@@ -407,7 +430,10 @@ pub fn vault_foot(
           entered = f.submitted
         }
       })
-      |> ignore
+      if done {
+        c.draw_only(typed_box)
+      }
+    }
     _ => ()
   }
   let empty = typed is Some(_) && secret.trim(chars=" \n\t").to_string() == ""
@@ -460,13 +486,13 @@ pub fn vault_foot(
     c.box(style=ask_foot, id=acts_id, fn() {
       if answer is SetUp {
         // kept only in a vault that is on here: the way to turn it on first
-        if @sf.button(c, tr("android-settings.vault.turnOn"), key="vault/" + request + "/on", tone=Primary) {
+        if @sf.button(c, tr("android-settings.vault.turnOn"), key="vault/" + request + "/on", tone=Primary, disabled=done) {
           (core.push)(Route::Vault)
         }
       } else {
         let yes = if save { "android-settings.vault.act.save" } else { "android-settings.vault.act.allow" }
-        let pressed = @sf.button(c, tr(yes), key="vault/" + request + "/yes", tone=Primary, busy=busy(true), disabled=under || empty)
-        if pressed || (entered && !under && !empty) {
+        let pressed = @sf.button(c, tr(yes), key="vault/" + request + "/yes", tone=Primary, busy=busy(true), disabled=greyed(true, under || empty))
+        if !done && (pressed || (entered && !under && !empty)) {
           let what = tr(if save { "android-settings.vault.act.saveWhat" } else { "android-settings.vault.act.allowWhat" })
           let params : Array[(String, Json)] = [("workspace", str(ws)), ("request", str(request)), ("scope", str(if save { "once" } else { scope }))]
           if given is Some(g) {
@@ -477,13 +503,13 @@ pub fn vault_foot(
         }
       }
       let no = if save { "android-settings.vault.act.dontSave" } else { "android-settings.vault.act.deny" }
-      if @sf.button(c, tr(no), key="vault/" + request + "/no", tone=Ghost, busy=busy(false), disabled=under) {
+      if @sf.button(c, tr(no), key="vault/" + request + "/no", tone=Ghost, busy=busy(false), disabled=greyed(false, under)) && !done {
         act(false, "vault.deny", tr("android-settings.vault.act.denyWhat"), obj([("workspace", str(ws)), ("request", str(request))]))
       }
     })
     |> ignore
   }
-  c.box(style=ask_room, id=room_id, fn() {
+  let room = c.box(style=ask_room, id=room_id, fn() {
     if over {
       c.box(style=if foot { ask_over.then(@sf.over_foot_reach(@sf.button_height())) } else { ask_over }, pick) |> ignore
     }
@@ -499,7 +525,9 @@ pub fn vault_foot(
     })
     |> ignore
   })
-  |> ignore
+  if done {
+    c.draw_only(room)
+  }
 }
 
 ///|

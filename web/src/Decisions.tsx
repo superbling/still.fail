@@ -154,11 +154,11 @@ export function MessageDecision({ message: m, thread, children }: { message: Cha
   const d = m.decision;
   const open = !d?.resolved && !d?.dismissed;
   const box = useRef<HTMLDivElement>(null);
-  // Settled, the options are drawn once more, to be read as they go (useSettling); open again (an answer that failed),
-  // they are back at once.
+  // Settled on screen, the options stay as they were, the one picked marked, none pressed, till they are out of sight
+  // (useSettling: then how it went, at once); open again (an answer that failed), they are back at once.
   const [drawnOpen, setDrawnOpen] = useState(open);
   const shown = open || drawnOpen;
-  useSettling(box, open, drawnOpen, setDrawnOpen, { arriving: `.${css.settledLine}` });
+  useSettling(box, open, drawnOpen, setDrawnOpen);
   if (!m.card && !m.options?.length) return null;
   // A login card stays as its login goes (waiting, done, failed, cancelled): it says how it ended itself, once closed.
   if (m.card?.type === "login" && m.card.login) {
