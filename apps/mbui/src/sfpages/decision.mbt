@@ -219,7 +219,7 @@ fn vault_ask_card(c : @ui.Ctx, here : MessageHere, m : Message, card : Card, ask
             card.vault,
             asked,
             @settings.card_answer(ask.answer, ask.lasts, mine_to(here, card.assignee), who=card.assignee_text),
-            settled=ask.status,
+            ended=if decided { Some((ask.status, ask.scope)) } else { None },
           )
         None => @settings.vault_ask_words(c, asked)
       }
@@ -269,7 +269,7 @@ fn phone_ask_card(c : @ui.Ctx, here : MessageHere, m : Message, card : Card, ask
   let decided = ask.status != ""
   let asking = fn() {
     c.box(style=@sf.ask_card_room, fn() {
-      @settings.phone_card(c, here.core, here.station, ask.request, ask.reason, mine_to(here, card.assignee), lasts=ask.lasts, who=card.assignee_text, settled=ask.status)
+      @settings.phone_card(c, here.core, here.station, ask.request, ask.reason, mine_to(here, card.assignee), lasts=ask.lasts, who=card.assignee_text, ended=if decided { Some((ask.status, ask.scope, ask.why)) } else { None })
     })
     |> ignore
   }

@@ -6,13 +6,13 @@
 // (settling.tsx, docs/list-motion.md).
 import type { ChatMessage, VaultAsk as Ask, VaultSave } from "./core/shapes.ts";
 import { VaultCard } from "./VaultApproval.tsx";
-import { Button } from "./ui.tsx";
 import { useSettling } from "./settling.tsx";
 import { useStation } from "./station.tsx";
 import * as pagesCss from "./styles/pages.css.ts";
 import * as css from "./VaultAsk.css.ts";
 import { t } from "./i18n.ts";
-import { useRef, useState, type ReactNode } from "react";
+import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { ENTER, play } from "@stillfail/ui/motion.ts";
 
 /** What a request's card says: the item, how it would be given, the command it is for (or, one to keep, what it is). */
 export type Asked = { name: string; mode: string; command?: string | null | undefined; save?: VaultSave | undefined; station?: string | undefined };
@@ -62,11 +62,15 @@ export function VaultAsk({ message: m, ask, rows = true }: { message: ChatMessag
   useSettling(box, open, drawnOpen, setDrawnOpen);
   if (!open && !drawnOpen) return <Outcome ask={ask} />;
   const buttons = rows && !!m.card?.vault;
-  // (decided where its buttons were shown: they stay, the one given as it was, the rest greyed, none pressed)
+  // (decided where its buttons were shown: how it went in their place, as high as they were)
   const foot = !buttons ? null : open ? !m.decision?.resolved && <VaultCard address={station} id={m.card!.vault!} who={m.card?.assigneeText} />
-    : <div className={pagesCss.cardFoot} inert>
-      <Button variant="primary" disabled={ask.status !== "granted"}>{t(ask.save ? "web-pages.vault.act.save" : "web-pages.vault.act.allow")}</Button>
-      <Button variant="ghost" disabled={ask.status !== "denied"}>{t(ask.save ? "web-pages.vault.act.dontSave" : "web-pages.vault.act.deny")}</Button>
-    </div>;
+    : <div className={pagesCss.cardFoot}><Arrived><Outcome ask={ask} /></Arrived></div>;
   return <div ref={box}><AskCard ask={ask}>{foot}</AskCard></div>;
+}
+
+/** What comes in a card's place once it is answered while it shows: fading in where it is (motion.ts ENTER). */
+function Arrived({ children }: { children: ReactNode }) {
+  const el = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => { play(el.current, [{ opacity: 0 }, { opacity: 1 }], ENTER); }, []);
+  return <div ref={el}>{children}</div>;
 }

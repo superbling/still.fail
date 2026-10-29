@@ -1,6 +1,6 @@
 // An agent's request about a vault item in its chat's list (sfpages' decision.mbt vault_ask_card): whole as it comes,
-// as the core says it with the post; decided on screen, its card stays, the answer given as it was and none pressed
-// any more; out of sight, how it went in its place, as a post's answered options are.
+// as the core says it with the post; decided on screen, its card stays, how it went said in its answer's place; out of
+// sight, only how it went, as a post's answered options are.
 
 ///|
 /// How the chat's request stands: how it went once decided (`status`), and the chat's version, moving on with it;
@@ -108,7 +108,7 @@ fn vault_chat_src(vc : VaultChat, calls : Array[String]) -> Source {
 }
 
 ///|
-test "a request decided in its chat: its card stays as it is on screen, how it went in its place once out of sight" {
+test "a request decided in its chat: its card stays on screen, how it went in its answer's place; out of sight, only that" {
   reset()
   let vc : VaultChat = { status: "", version: 1, vaults_asked: false }
   let calls : Array[String] = []
@@ -125,11 +125,11 @@ test "a request decided in its chat: its card stays as it is on screen, how it w
   let (nx, ny) = t.find("不存").unwrap()
   tap_now(t, "不存")
   assert_eq(calls.filter(fn(n) { n.has_prefix("vault.") }), ["vault.deny"])
-  // decided: the card as it was, where it was, none of it pressed any more (its answer only drawn)
+  // decided: the card where it was, how it went in its answer's place, none of it pressed any more
   t.run_for(turn_most_ms)
   let (_, now, _, _) = t.rect_of("存入密码「UniFi UX7」").unwrap()
   assert_eq(now, top)
-  assert_true(t.find("未存入「UniFi UX7」") is None)
+  assert_true(t.find("未存入「UniFi UX7」") is Some(_))
   t.press_at(nx, ny)
   t.release(nx, ny)
   assert_eq(calls.filter(fn(n) { n.has_prefix("vault.") }), ["vault.deny"])
