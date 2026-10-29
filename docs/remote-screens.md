@@ -12,7 +12,8 @@
   `DevToolsActivePort`. It stays up while used, and goes after a long idle (an hour); logins persist in the profile.
   It outlives a station process (as jobs do): the next one finds it by `DevToolsActivePort` and takes it up; one that
   dies in use is started again, on the same port when it is free (`station/src/browser/`).
-- It never comes in front of what the person at the machine is doing. Every tab is opened in a window of its own,
+- It never comes in front of what the person at the machine is doing. It starts with no window
+  (`--no-startup-window`; a window it starts with makes it the front app). Every tab is opened in a window of its own,
   behind the others (`Target.createTarget` with `newWindow: true, background: true`: the station's, and a session's
   as its door passes it on), where it is the front tab of its window, so drawn: its screenshots and screencast come
   without its being brought forward. Nothing brings a tab forward: a view does not, and a session's

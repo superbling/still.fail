@@ -89,9 +89,11 @@ test("Chrome is started as a person's browser: no automation switches, headless 
   assert.ok(headful.includes("--user-data-dir=/d/browser/profile"));
   assert.ok(headful.includes("--remote-debugging-port=0"));
   assert.ok(headful.includes("--disable-blink-features=AutomationControlled"), "navigator.webdriver stays false");
+  assert.ok(headful.includes("--no-startup-window"), "no window that would come in front of the person's as it starts");
   for (const a of headful) assert.doesNotMatch(a, /enable-automation|remote-debugging-pipe|headless|user-agent|use-mock-keychain|password-store/);
   const headless = chromeArgs({ profile: "/p", port: 9333, headless: true, userAgent: "UA" });
   assert.ok(headless.includes("--headless=new") && headless.includes("--remote-debugging-port=9333") && headless.includes("--user-agent=UA"));
+  assert.ok(!headless.includes("--no-startup-window"));
   assert.equal(
     headfulAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36"),
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
