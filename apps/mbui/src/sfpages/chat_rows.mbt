@@ -102,27 +102,33 @@ fn chat_state(c : @ui.Ctx, src : Source, here : MessageHere, words : String, lea
 
 ///|
 /// What the chat needs of the viewer as a card (chat_state): the bell and its words in the ink, 忽略 at its end (under
-/// them where a native narrow chat has little room); `seq` the post that asks, None as the card goes (its 忽略 drawn,
-/// nothing left to let go).
+/// them where a native narrow chat has little room); `seq` the post that asks, None once let go while it shows: how it
+/// went (`words`, 已忽略：…) quiet in its place, the bell's room kept empty, nothing left to press.
 fn need_card(c : @ui.Ctx, src : Source, here : MessageHere, words : String, rest : String, seq : Double?) -> Unit {
   let look = @sf.theme().chat_list
-  let said = @sf.ask_line_words(look.state_turn.then(chat_state_wraps))
+  let said = @sf.ask_line_words(
+    (if seq is Some(_) { look.state_turn } else { look.state_quiet }).then(chat_state_wraps),
+  )
   let stacked = @sf.native_on() && c.width <= chat_narrow_w
   let dismiss = fn() {
     match seq {
       Some(seq) => ask_dismiss(c, src, here, seq, true, false, at_end=true)
-      None =>
-        c.text(@sf.t("web-main.chat.asks.dismiss"), style=@sf.ask_line_words(look.state_quiet.then(dismiss_end)))
-        |> ignore
+      None => ()
     }
   }
   // (an option row's ground and room, @sf.ask_line_card: its corner and its sides an option's)
   @sf.ask_line_card(c, column=stacked, fn() {
     c.box(style=need_card_words, label=words, fn() {
       // (the bell where an option's number is, in the middle of its disc: concentric with the row's corner as it is)
-      c.box(style=@sf.ask_line_mark(), fn() { lead_icon(c, "need", @sf.theme().p.text, centred=true) }) |> ignore
-      if rest != "" {
-        c.text(rest, style=said) |> ignore
+      c.box(style=@sf.ask_line_mark(), fn() {
+        if seq is Some(_) {
+          lead_icon(c, "need", @sf.theme().p.text, centred=true)
+        }
+      })
+      |> ignore
+      let line = if seq is Some(_) { rest } else { words }
+      if line != "" {
+        c.text(line, style=said) |> ignore
       }
     })
     |> ignore

@@ -145,7 +145,7 @@ test "a decision answered here: your answer comes in, the options staying as the
   assert_eq(tu.shown.get("ask/ts8"), Some(true))
   assert_true(tu.asks.iter().all(fn(a) { a.what != Change("ask/ts8") }))
   assert_true(t.find("把首页和聊天页的截图都更新") is Some(_))
-  assert_true(t.find("你 选择了「一起换」") is None)
+  assert_true(t.find("等 林 决定") is None)
 }
 
 ///|

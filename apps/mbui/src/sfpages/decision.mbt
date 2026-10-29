@@ -91,8 +91,11 @@ fn message_decision(c : @ui.Ctx, src : Source, here : MessageHere, m : Message, 
       start_at?,
       fn() {
         c.box(style=decision_box, fn() {
-          match m.card {
-            Some({ assignee_text: Some(a), .. }) => c.text(a, style=settled_line) |> ignore
+          // (who decides; answered while it shows, how it went in that line's place)
+          match (m.card, m.decision) {
+            (Some({ assignee_text: Some(_), .. }), Some({ text: Some(w), .. })) if resolved =>
+              c.text(w, style=settled_line) |> ignore
+            (Some({ assignee_text: Some(a), .. }), _) => c.text(a, style=settled_line) |> ignore
             _ => ()
           }
           match m.card {

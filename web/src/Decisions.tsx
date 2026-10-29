@@ -172,7 +172,8 @@ export function MessageDecision({ message: m, thread, children }: { message: Cha
   return (
     <div ref={box} className={css.decision}>
       {shown ? <>
-        {m.card?.assigneeText && <p className={css.settledLine}>{m.card.assigneeText}</p>}
+        {/* Who decides; settled while it shows, how it went in that line's place. */}
+        {m.card?.assigneeText && <p className={css.settledLine}>{!open && d?.text ? d.text : m.card.assigneeText}</p>}
         {/* An agent's request for a vault item: approved here (VaultApproval.tsx), not answered in words. */}
         {m.card?.vault ? <VaultCard address={station} id={m.card.vault} />
           : thread !== null && cardType(m.card, m.options) === "options" && !!m.options?.length &&

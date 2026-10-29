@@ -169,7 +169,7 @@ the curves: a move's length and curve are a Move's (Curves, above), what goes go
   went a fifth of 200 in its first frame, ahead of words still setting off (the user: 「composer 好像还是会一帧动老远」).
 - A card answered from here (and anything answered or let go under a post: 忽略, a vault's or a phone's request, the
   chat's need at its end): on screen it moves nothing. Picked, none is pressed any more, the one picked as it was,
-  the rest faded; the answer's row comes in, in a turn kept for it as it is picked (list_turns.mbt `keep_turn`), the
+  the rest faded, the line over them saying who decides saying how it went in its place; the answer's row comes in, in a turn kept for it as it is picked (list_turns.mbt `keep_turn`), the
   one change of the list's height. The card does not close: it becomes how it went only out of sight (scrolled away
   and back, the chat left and opened again), at once (`Turns::in_turn`'s `seen`, `Reading::sees`); 忽略 fades where it
   is, its room kept. Closing the options after the answer (#2245) still moved the list three or four times (the
