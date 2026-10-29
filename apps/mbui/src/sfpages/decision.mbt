@@ -91,11 +91,18 @@ fn message_decision(c : @ui.Ctx, src : Source, here : MessageHere, m : Message, 
       start_at?,
       fn() {
         c.box(style=decision_box, fn() {
-          // (who decides; answered while it shows, how it went in that line's place)
-          match (m.card, m.decision) {
-            (Some({ assignee_text: Some(_), .. }), Some({ text: Some(w), .. })) if resolved =>
-              c.text(w, style=settled_line) |> ignore
-            (Some({ assignee_text: Some(a), .. }), _) => c.text(a, style=settled_line) |> ignore
+          // (who decides; answered while it shows, how it went in that line's place, the one fading out, then the
+          // other in: chat_rows.mbt said_in_place)
+          match m.card {
+            Some({ assignee_text: Some(a), .. }) => {
+              let went = match m.decision {
+                Some({ text: Some(w), .. }) if resolved => Some(w)
+                _ => None
+              }
+              let (was, now) = said_in_place(c, "who/" + key, went is Some(_))
+              let i = c.text(if was is Some(_) { a } else { went.unwrap_or(a) }, style=settled_line)
+              c.look(i, was.unwrap_or(now))
+            }
             _ => ()
           }
           match m.card {

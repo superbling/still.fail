@@ -110,3 +110,26 @@ export function Settles({ shown, children }: { shown: boolean; children: ReactNo
   if (!kept) return null;
   return <div ref={box} className={css.settles}>{(shown || drawn) && children}</div>;
 }
+
+/**
+ * A line saying something else once what it is about is answered while it shows (`text`), in the same room: what it
+ * said fades out (LEAVE), then what it says now fades in (ENTER); nothing moves.
+ */
+export function SaidInPlace({ text, className }: { text: string; className: string }) {
+  const el = useRef<HTMLParagraphElement>(null);
+  const [said, setSaid] = useState(text);
+  const changing = useRef(false);
+  useLayoutEffect(() => {
+    if (text === said || !el.current || !moving()) return void (text !== said && setSaid(text));
+    const out = play(el.current, [{ opacity: 1 }, { opacity: 0 }], { ...LEAVE, fill: "forwards" });
+    void out.finished.then(() => { changing.current = true; setSaid(text); }, () => undefined);
+    return () => out.cancel();
+  }, [text, said]);
+  useLayoutEffect(() => {
+    if (!changing.current) return;
+    changing.current = false;
+    for (const a of el.current?.getAnimations() ?? []) a.cancel();
+    play(el.current, [{ opacity: 0 }, { opacity: 1 }], ENTER);
+  }, [said]);
+  return <p ref={el} className={className}>{said}</p>;
+}

@@ -21,7 +21,7 @@ import { doingMatches, failed, useDoingList } from "./doing.ts";
 import { useAct } from "@stillfail/ui/toast.tsx";
 import { ENTER, LEAVE_EASE_CSS, MOVE_EASE_CSS, MOVE_NEAR_MS, motionMs, play } from "@stillfail/ui/motion.ts";
 import { listPaneOf, reserveRow } from "./listQueue.ts";
-import { useSettling } from "./settling.tsx";
+import { SaidInPlace, useSettling } from "./settling.tsx";
 import { ComposerView, StaticMessage } from "./Chat.tsx";
 import { DecisionsIdle } from "./DecisionsIdle.tsx";
 import { VaultCard } from "./VaultApproval.tsx";
@@ -173,7 +173,7 @@ export function MessageDecision({ message: m, thread, children }: { message: Cha
     <div ref={box} className={css.decision}>
       {shown ? <>
         {/* Who decides; settled while it shows, how it went in that line's place. */}
-        {m.card?.assigneeText && <p className={css.settledLine}>{!open && d?.text ? d.text : m.card.assigneeText}</p>}
+        {m.card?.assigneeText && <SaidInPlace className={css.settledLine} text={!open && d?.text ? d.text : m.card.assigneeText} />}
         {/* An agent's request for a vault item: approved here (VaultApproval.tsx), not answered in words. */}
         {m.card?.vault ? <VaultCard address={station} id={m.card.vault} />
           : thread !== null && cardType(m.card, m.options) === "options" && !!m.options?.length &&
