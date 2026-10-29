@@ -209,7 +209,7 @@ fn vault_ask_card(c : @ui.Ctx, here : MessageHere, m : Message, card : Card, ask
   }
   let decided = ask.status != ""
   let asking = fn() {
-    c.box(style=@sf.ask_card_room, fn() {
+    c.box(style=ask_card_under_head, fn() {
       match here.core {
         Some(core) =>
           @settings.vault_card(
@@ -268,7 +268,7 @@ fn vault_ask_card(c : @ui.Ctx, here : MessageHere, m : Message, card : Card, ask
 fn phone_ask_card(c : @ui.Ctx, here : MessageHere, m : Message, card : Card, ask : PhoneAsk) -> Unit {
   let decided = ask.status != ""
   let asking = fn() {
-    c.box(style=@sf.ask_card_room, fn() {
+    c.box(style=ask_card_under_head, fn() {
       @settings.phone_card(c, here.core, here.station, ask.request, ask.reason, mine_to(here, card.assignee), lasts=ask.lasts, who=card.assignee_text, ended=if decided { Some((ask.status, ask.scope, ask.why)) } else { None })
     })
     |> ignore
@@ -522,3 +522,9 @@ let dismiss_words : @ui.TextStyle = @ui.text_style(size=Meta, leading=L5, color=
 ///|
 // kept across runs: a value (no field of it changes)
 let dismiss_words_hot : @ui.TextStyle = @ui.text_style(size=Meta, leading=L5, color=Fg, wrap=false)
+
+///|
+/// An agent's request as its card in place of its post's words: a little under the post's head, as a card under a
+/// post's words is, not on it as a line of words is (@sf.ask_card_room).
+// kept across runs: a value (no field of it changes)
+let ask_card_under_head : @ui.Style = @sf.ask_card_room.then(@ui.css("mt=S2"))

@@ -47,7 +47,7 @@ export const choiceNumber = style({
   gridRow: "1 / span 2", alignSelf: "start", display: "grid", placeItems: "center", width: "20px", height: "20px",
   borderRadius: "50%", background: `color-mix(in srgb, ${vars.text} 9%, transparent)`,
   color: vars.muted, fontSize: vars.textCaption, fontWeight: "600", lineHeight: "20px", fontVariantNumeric: "tabular-nums",
-  selectors: { [`${choice}[data-recommended] &`]: { background: accent, color: "#fff" } },
+  selectors: { [`${choice}[data-recommended] &, ${choice}[data-chosen] &`]: { background: accent, color: "#fff" } },
 });
 globalStyle(`${choiceNumber} > svg`, { display: "block" });
 export const choiceLabel = style({

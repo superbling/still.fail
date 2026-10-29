@@ -215,50 +215,44 @@ pub fn vault_card(
 ///|
 /// A card's answer at its foot (`answer`), answered while the card shows (`ended`: whether it was granted, and how it
 /// went in words): its answer fades out where it is (answered_fade_ms, Leave), only drawn, then how it went fades in
-/// after it in the same room, as high as the answer was, its dot and its words in the middle of it. Nothing moves:
-/// the list it is in changes its height only once it is out of sight (sfbase's list_turns.mbt Turns::in_turn).
+/// after it over the room it leaves, its dot and its words in the middle of it. The answer stays laid out (unseen):
+/// the card keeps its size to the point, and the list it is in changes its height only once it is out of sight
+/// (sfbase's list_turns.mbt Turns::in_turn).
 pub fn answered_in_place(c : @ui.Ctx, key : String, ended : (Bool, String)?, answer : () -> Unit) -> Unit {
-  let id = c.id("answered/" + key)
   let was = @motion.presence(
     c,
     "answered-was/" + key,
     ended is None,
     exit=@motion.trans(fade=0.0, spec=@motion.tween(answered_fade_ms, ease=Leave)),
   )
-  match (was, ended) {
-    (None, Some((granted, words))) => {
-      // (as high as the answer was: its room as last laid out)
-      let room = match c.laid_size(id) {
-        Some((_, h)) => answered_room.then(@ui.style(h=Fixed(h), justify=JCenter))
-        None => answered_room
-      }
-      let b = c.box(id~, style=room, fn() {
-        c.box(style=answered_line, fn() {
-          c.box(style=if granted { ask_dot_on } else { ask_dot }, fn() {  }) |> ignore
-          c.text(words, style=ask_ended_words) |> ignore
-        })
-        |> ignore
-      })
-      let now = @motion.presence(
-        c,
-        "answered-now/" + key,
-        true,
-        enter=@motion.trans(fade=0.0, spec=@motion.tween(answered_fade_ms, ease=Out)),
-        initial=true,
-      )
-      c.look(b, now.unwrap_or(@ui.look()))
-    }
-    _ => {
-      let b = c.box(id~, style=answered_room, answer)
-      match was {
-        Some(l) => c.look(b, l)
-        None => ()
-      }
-      if ended is Some(_) {
-        c.draw_only(b)
+  c.box(style=answered_whole, fn() {
+    let a = c.box(style=answered_room, answer)
+    match ended {
+      None => ()
+      Some((granted, words)) => {
+        c.look(a, was.unwrap_or(@ui.look(alpha=0.0)))
+        c.draw_only(a)
+        if was is None {
+          let now = @motion.presence(
+            c,
+            "answered-now/" + key,
+            true,
+            enter=@motion.trans(fade=0.0, spec=@motion.tween(answered_fade_ms, ease=Out)),
+            initial=true,
+          )
+          c.layer(fn() {
+            let o = c.box(style=answered_over, fn() {
+              c.box(style=if granted { ask_dot_on } else { ask_dot }, fn() {  }) |> ignore
+              c.text(words, style=ask_ended_words) |> ignore
+            })
+            c.look(o, now.unwrap_or(@ui.look()))
+          })
+          |> ignore
+        }
       }
     }
-  }
+  })
+  |> ignore
 }
 
 ///|
@@ -660,9 +654,14 @@ let ask_dot_line_out : @ui.Style = ask_dot_line.then(@ui.style(ml=@sf.message_av
 let answered_room : @ui.Style = @ui.css("w=Full gap=S3_5")
 
 ///|
-/// How it went in a card's answer's place: its dot and its words on a line, the dot in the middle of it.
+/// What holds a card's answer and how it went over it (answered_in_place): the card's width.
 // kept across runs: a value (no field of it changes)
-let answered_line : @ui.Style = @ui.css("row w=Full gap=S2 align=ACenter")
+let answered_whole : @ui.Style = @ui.css("w=Full")
+
+///|
+/// How it went over a card's answer's room: its dot and its words on a line in the middle of the room's height.
+// kept across runs: a value (no field of it changes)
+let answered_over : @ui.Style = @ui.css("row w=Full h=Full gap=S2 align=ACenter")
 
 ///|
 // kept across runs: a value (no field of it changes)

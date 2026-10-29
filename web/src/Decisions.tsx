@@ -31,7 +31,7 @@ import { MobileComposer, type HostComposer } from "./mobile/ChatHost.tsx";
 import * as css from "./Decisions.css.ts";
 import * as chatCss from "./Chat.css.ts";
 import { t } from "./i18n.ts";
-import { Option1, Option2, Option3, Option4, Option5, Option6 } from "@stillfail/ui/icons.tsx";
+import { Check, Option1, Option2, Option3, Option4, Option5, Option6 } from "@stillfail/ui/icons.tsx";
 import { Spinner, Waiting, type WaitNote } from "@stillfail/ui/waiting.tsx";
 import { sampleDecisions } from "./samples.ts";
 
@@ -71,12 +71,14 @@ export function DecisionOptions({ station, thread, seq, options, onPick, settled
       {options.map((o, i) => {
         const busy = sending?.params.option === o.label;
         const Digit = DIGITS[i];
+        // (the one picked, answered: a check in its disc where its number was)
+        const chosen = settled !== undefined && settled === o.label;
         return (
           <button key={o.label} type="button" className={css.choice} data-recommended={o.recommended || undefined} data-busy={busy || undefined}
-            data-chosen={(settled !== undefined && settled === o.label) || undefined}
+            data-chosen={chosen || undefined}
             disabled={!!sending || settled !== undefined} aria-busy={busy || undefined} aria-description={o.recommended ? t("common.recommended") : undefined}
             onClick={(e) => pick(o, e.currentTarget)}>
-            <span className={css.choiceNumber} aria-hidden="true">{Digit ? <Digit size={20} /> : i + 1}</span>
+            <span className={css.choiceNumber} aria-hidden="true">{chosen ? <Check size={12} /> : Digit ? <Digit size={20} /> : i + 1}</span>
             <span className={css.choiceLabel}>{o.label}</span>
             {o.detail && <span className={css.choiceDetail}>{o.detail}</span>}
             {busy && <Spinner inline className={css.choiceSpinner} />}

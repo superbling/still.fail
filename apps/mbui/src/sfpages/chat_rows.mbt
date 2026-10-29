@@ -103,7 +103,8 @@ fn chat_state(c : @ui.Ctx, src : Source, here : MessageHere, words : String, lea
 ///|
 /// What the chat needs of the viewer as a card (chat_state): the bell and its words in the ink, 忽略 at its end (under
 /// them where a native narrow chat has little room); `seq` the post that asks, None once let go while it shows: in its
-/// place how it went (`words`, 已忽略：…), quiet, from the card's start (no bell: nothing is asked any more), 忽略 faded
+/// place how it went (`words`, 已忽略：…), quiet, where the bell's ink began (no bell: nothing is asked any more), as
+/// far in as 忽略 is from the end, 忽略 faded
 /// where it was, nothing left to press. What it said fades out, then how it went fades in after it (said_in_place): the card's room never changes.
 fn need_card(c : @ui.Ctx, src : Source, here : MessageHere, words : String, rest : String, seq : Double?) -> Unit {
   let look = @sf.theme().chat_list
@@ -122,7 +123,7 @@ fn need_card(c : @ui.Ctx, src : Source, here : MessageHere, words : String, rest
   }
   // (an option row's ground and room, @sf.ask_line_card: its corner and its sides an option's)
   @sf.ask_line_card(c, column=stacked, fn() {
-    let w = c.box(style=need_card_words, label=words, fn() {
+    let w = c.box(style=if asking { need_card_words } else { need_card_words.then(@sf.ask_line_start(state_icon)) }, label=words, fn() {
       // (the bell where an option's number is, in the middle of its disc: concentric with the row's corner as it is)
       if asking {
         c.box(style=@sf.ask_line_mark(), fn() { lead_icon(c, "need", @sf.theme().p.text, centred=true) }) |> ignore

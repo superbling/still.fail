@@ -3575,6 +3575,18 @@ pub fn ask_line_mark() -> @ui.Style {
 }
 
 ///|
+/// How big the check in a picked option's disc is, of the disc (options_card).
+pub let option_check_share : Double = 0.6
+
+///|
+/// Room at the start of ask_line_card's row where no mark leads it (what the chat needed, let go): its words where the
+/// mark `icon` wide would start in ask_line_mark's column, as far in as what ends the row (ask_line_end) is from its end.
+pub fn ask_line_start(icon : Double) -> @ui.Style {
+  let side = (ask_line_disc() - icon) / 2.0
+  @ui.style(pl=room(side))
+}
+
+///|
 /// Room at the end of ask_line_card's row for what ends it (忽略) to stand as far from the row's end as a mark `icon`
 /// wide in the middle of ask_line_mark's column stands from its start.
 pub fn ask_line_end(icon : Double) -> @ui.Style {
@@ -3662,16 +3674,20 @@ pub fn options_card(
           opacity=if history || enabled || chosen == Some(i) { 1.0 } else { 0.5 },
           id~,
           fn() {
+            // (the one picked, answered: a check in its disc where its number was, on the accent)
+            let picked_here = !history && chosen == Some(i)
             c.box(
               w=Px(ot.disc),
               h=Px(ot.disc),
               radius=ot.disc / 2.0,
-              bg=if o.2 { t.p.accent } else { alpha(t.p.text, 0.09) },
+              bg=if o.2 || picked_here { t.p.accent } else { alpha(t.p.text, 0.09) },
               align=ACenter,
               justify=JCenter,
               fn() {
-                let color = if o.2 { 0xFFFFFFFFL } else { t.p.muted }
-                if i < 6 {
+                let color = if o.2 || picked_here { 0xFFFFFFFFL } else { t.p.muted }
+                if picked_here {
+                  icon(c, "check", size=ot.disc * option_check_share, color~) |> ignore
+                } else if i < 6 {
                   icon(c, "option-\{i + 1}", size=ot.disc, color~) |> ignore
                 } else {
                   c.text("\{i + 1}", size=theme().t.caption, weight=600, color~, wrap=false) |> ignore
