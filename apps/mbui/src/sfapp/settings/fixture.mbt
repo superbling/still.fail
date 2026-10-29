@@ -15,6 +15,7 @@ priv struct SettingsFixture {
   mut auto : Bool
   /// the station going on afresh by itself once a session's cache is over
   mut congestion : String
+  mut relay_udp : Bool
   mut afresh : Bool
   /// the station sending its log to still.fail
   mut logs : Bool
@@ -67,6 +68,7 @@ let fx : SettingsFixture = {
   marks: {},
   auto: false,
   congestion: "cubic",
+  relay_udp: false,
   afresh: false,
   logs: true,
   outflow: false,
@@ -152,6 +154,7 @@ fn fixture_reset() -> Unit {
   fx.outflow = false
   fx.elevation = None
   fx.congestion = "cubic"
+  fx.relay_udp = false
   fx.none = false
   fx_adb.val = ""
   fx.login = ""
@@ -936,7 +939,7 @@ fn fx_station(address : String) -> Json {
           ("search", obj([("files", str("spotlight")), ("personal", Json::boolean(false))])),
           ("context", obj([("afreshWhenCold", Json::boolean(fx.afresh))])),
           ("diagnostics", obj([("logs", Json::boolean(fx.logs))])),
-          ("network", obj([("congestion", str(fx.congestion))])),
+          ("network", obj([("congestion", str(fx.congestion)), ("relayUdp", Json::boolean(fx.relay_udp))])),
           ("outflowGrants", Json::number(if fx.outflow { 1.0 } else { 0.0 })),
           ("elevation", fx.elevation.unwrap_or(Json::null())),
           ("sharing", Json::boolean(true)),
@@ -2022,6 +2025,10 @@ pub fn fixture_call(name : String, params : Json) -> Result[Json, Json]? {
     }
     "network.setCongestion" => {
       fx.congestion = text(p, "congestion")
+      Some(Ok(obj([])))
+    }
+    "network.setRelayUdp" => {
+      fx.relay_udp = flag(p, "relayUdp")
       Some(Ok(obj([])))
     }
     "elevation.set" => {
