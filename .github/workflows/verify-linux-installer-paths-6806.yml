@@ -1,0 +1,26 @@
+name: Verify Linux installer paths 6806
+on:
+  push:
+    branches: [verify/linux-installer-paths-6806]
+permissions:
+  contents: read
+jobs:
+  paths:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify actual systemd parsing and execution
+        run: node verify-linux-installer-paths.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        continue-on-error: true
+        with:
+          name: linux-installer-paths-proof
+          path: verification-evidence/

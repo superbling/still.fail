@@ -379,21 +379,26 @@ if [ "$os" = Darwin ]; then
 PLIST
 elif user_systemd; then
   service_file="$unit_dir/$unit"
+  # systemd expands percent specifiers in paths, but only command/environment words use C escapes.
+  unit_text() { printf '%s' "$1" | sed 's/%/%%/g'; }
+  unit_word() { unit_text "$1" | sed -e 's/\\\\/\\\\\\\\/g' -e 's/"/\\\\"/g'; }
   # KillMode=process: stopping the service stops the station, not the jobs it runs (the next one takes them up).
+  # A shell exec keeps the main PID and permits quotes/backslashes in the executable's path (systemd rejects those).
+  # ':' leaves dollars for that shell alone; the path comes from its quoted, literal environment value.
   cat > "$tmp/service" <<UNIT
 [Unit]
 Description=still.fail station
 After=network-online.target
 
 [Service]
-ExecStart=$app/bin/stillfail start
-Environment=PATH=$agent_path
-Environment=STILLFAIL_DATA=$data
+ExecStart=:/bin/sh -c 'exec "\\$STILLFAIL_DATA/app/bin/stillfail" start'
+Environment="$(unit_word "PATH=$agent_path")"
+Environment="$(unit_word "STILLFAIL_DATA=$data")"
 Restart=always
 RestartSec=5
 KillMode=process
-StandardOutput=append:$data/stillfail.log
-StandardError=append:$data/stillfail.log
+StandardOutput=append:$(unit_text "$data/stillfail.log")
+StandardError=append:$(unit_text "$data/stillfail.log")
 
 [Install]
 WantedBy=default.target

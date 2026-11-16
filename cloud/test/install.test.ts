@@ -154,13 +154,36 @@ esac
   return { root, home, run, done: () => rmSync(root, { recursive: true, force: true }) };
 }
 
+test("the Linux service preserves spaces, quotes, backslashes and specifiers in paths", () => {
+  const m = machine("linux");
+  try {
+    const data = join(m.root, String.raw`station "one" 'two'\path %u $HOME`);
+    const extra = join(m.root, String.raw`tools "three" 'four'\bin %h $HOME`);
+    const done = m.run(["tok"], { STILLFAIL_DATA: data, PATH: `${join(m.root, "stub")}:${extra}:/usr/bin:/bin:/usr/sbin:/sbin` });
+    assert.equal(done.status, 0, done.out);
+    const unit = readFileSync(join(m.home, ".config/systemd/user/stillfail-station.service"), "utf8");
+    assert.equal(/^ExecStart=(.*)$/m.exec(unit)?.[1], `:/bin/sh -c 'exec "$STILLFAIL_DATA/app/bin/stillfail" start'`);
+    // These double-quoted words use only the C escapes shared by JSON and systemd.syntax(7).
+    // Environment does not expand dollars; all three fields do expand percent specifiers.
+    const environment = [...unit.matchAll(/^Environment=(.*)$/gm)].map((line) => (JSON.parse(line[1]!) as string).replaceAll("%%", "%"));
+    assert.ok(environment.includes(`STILLFAIL_DATA=${data}`));
+    assert.ok(environment.find((value) => value.startsWith("PATH="))?.slice(5).split(":").includes(extra));
+    for (const field of ["StandardOutput", "StandardError"]) {
+      const value = new RegExp(`^${field}=append:(.*)$`, "m").exec(unit)?.[1];
+      assert.equal(value?.replaceAll("%%", "%"), join(data, "stillfail.log"));
+    }
+  } finally {
+    m.done();
+  }
+});
+
 test("in WSL the station runs without Windows' PATH, and Windows keeps WSL up from its sign-in on", () => {
   const m = machine("wsl");
   try {
     const done = m.run(["tok"], { WSL_DISTRO_NAME: "Ubuntu", PATH: `${join(m.root, "stub")}:/usr/bin:/bin:/mnt/c/Program Files/nodejs:/mnt/c/Windows` });
     assert.equal(done.status, 0, done.out);
     const unit = readFileSync(join(m.home, ".config/systemd/user/stillfail-station.service"), "utf8");
-    const path = /^Environment=PATH=(.*)$/m.exec(unit)?.[1] ?? "";
+    const path = /^Environment="PATH=(.*)"$/m.exec(unit)?.[1] ?? "";
     assert.match(path, /\/usr\/bin/);
     assert.doesNotMatch(path, /\/mnt\//, "none of Windows' directories");
     const keeper = join(m.root, "c/Users/kim/AppData/Roaming/Microsoft/Windows/Start Menu/Programs/Startup/stillfail-station-Ubuntu.vbs");
@@ -187,7 +210,7 @@ test("in WSL the station runs without Windows' PATH, and Windows keeps WSL up fr
     // Another Linux keeps its PATH as it is and hears nothing of WSL.
     const done = linux.run(["tok"], { PATH: `${join(linux.root, "stub")}:/usr/bin:/bin:/mnt/tools/bin` });
     assert.equal(done.status, 0, done.out);
-    assert.match(readFileSync(join(linux.home, ".config/systemd/user/stillfail-station.service"), "utf8"), /^Environment=PATH=.*:\/mnt\/tools\/bin/m);
+    assert.match(readFileSync(join(linux.home, ".config/systemd/user/stillfail-station.service"), "utf8"), /^Environment="PATH=.*:\/mnt\/tools\/bin/m);
     // (its own words: the test's directory, named at random, may hold the letters too, as install-test-6JZWSL did)
     assert.doesNotMatch(done.out.replaceAll(linux.root, ""), /WSL/);
   } finally {
