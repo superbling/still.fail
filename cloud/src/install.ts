@@ -420,7 +420,7 @@ if [ -z "$token" ] && [ -f "$station_json" ]; then
   esac
 fi
 # The service's definition, less its PATH: what makes a service "changed".
-without_path() { sed -e 's#<key>PATH</key><string>[^<]*</string>##' -e '/^Environment=PATH=/d' "$1"; }
+without_path() { sed -e 's#<key>PATH</key><string>[^<]*</string>##' -e '/^Environment=PATH=/d' -e '/^Environment="PATH=/d' "$1"; }
 same_service() { [ -z "$service_file" ] || { [ -f "$service_file" ] && [ "$(without_path "$tmp/service")" = "$(without_path "$service_file")" ]; }; }
 # Whether this runs inside the station: the station among the processes it comes from (an agent's turn, a job).
 inside_station() {

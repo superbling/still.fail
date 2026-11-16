@@ -172,6 +172,18 @@ test("the Linux service preserves spaces, quotes, backslashes and specifiers in 
       const value = new RegExp(`^${field}=append:(.*)$`, "m").exec(unit)?.[1];
       assert.equal(value?.replaceAll("%%", "%"), join(data, "stillfail.log"));
     }
+    // The same installed release is not restarted just because another shell's PATH differs.
+    mkdirSync(join(data, "mesh"), { recursive: true });
+    writeFileSync(join(data, "mesh/cloud.json"), '{"origin":"https://app.still.fail"}');
+    mkdirSync(join(data, "run"), { recursive: true });
+    // This PID is only reported by our ps stub: no handoff/drain and no real process to signal.
+    writeFileSync(join(data, "run/station.json"), '{"pid":2147483647,"startedAt":1}');
+    writeFileSync(join(m.root, "stub/ps"), '#!/bin/sh\n[ "$1" = -p ] && echo stillfail-station || echo 0\n', { mode: 0o755 });
+    writeFileSync(join(m.home, "said"), "");
+    const again = m.run([], { STILLFAIL_DATA: data, PATH: `${join(m.root, "stub")}:/another/path:/usr/bin:/bin:/usr/sbin:/sbin` });
+    assert.equal(again.status, 0, again.out);
+    assert.doesNotMatch(again.said, /systemctl --user (stop|restart|enable)/);
+    assert.equal(readFileSync(join(m.home, ".config/systemd/user/stillfail-station.service"), "utf8"), unit);
   } finally {
     m.done();
   }
